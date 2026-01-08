@@ -7,8 +7,6 @@
 
 **Go-Watchdog** is a high-performance, concurrent service monitoring tool built with Go. It allows you to monitor the uptime of your websites and APIs in real-time through a sleek web dashboard and automated status checks.
 
-
-
 ## 🚀 Features
 
 * **Concurrent Monitoring:** Leverages Go's **Goroutines** to perform health checks in parallel, ensuring high performance regardless of the number of targets.
@@ -43,26 +41,31 @@ go-watchdog/
 ├── Dockerfile            # Container configuration
 └── go.mod                # Dependency management
 ```
+
 ## 🚦 Getting Started
 
 ### Prerequisites
+
 * **Go 1.21+**
 * **Docker** (Optional)
 
 ### Installation & Local Run
 
-1.  **Clone the repository:**
+1. **Clone the repository:**
+
     ```bash
     git clone [https://github.com/Ameprizzo/go-watchdog.git](https://github.com/Ameprizzo/go-watchdog.git)
     cd go-watchdog
     ```
 
-2.  **Initialize the module (if not already done):**
+2. **Initialize the module (if not already done):**
+
     ```bash
     go mod tidy
     ```
 
-3.  **Run the application:**
+3. **Run the application:**
+
     ```bash
     go run cmd/watchdog/main.go
     ```
@@ -76,14 +79,18 @@ docker build -t go-watchdog .
 # Run the container
 docker run -p 8080:8080 go-watchdog
 ```
+
 ## 📈 Roadmap
-- [ ] **Historical Tracking:** Implement uptime percentage tracking with a lightweight SQLite database.
-- [ ] **Alerting:** Add support for Discord and Slack webhooks for instant notifications.
-- [ ] **Custom Intervals:** Allow per-service check intervals (e.g., check API every 10s, but Blog every 5m).
-- [ ] **Unit Testing:** Add comprehensive tests for the monitoring and notification logic.
+
+* [ ] **Historical Tracking:** Implement uptime percentage tracking with a lightweight SQLite database.
+* [ ] **Alerting:** Add support for Discord and Slack webhooks for instant notifications.
+* [ ] **Custom Intervals:** Allow per-service check intervals (e.g., check API every 10s, but Blog every 5m).
+* [ ] **Unit Testing:** Add comprehensive tests for the monitoring and notification logic.
 
 ## 👤 Author
-**Amedeus Primi Lyakurwa**
+
+### Amedeus Primi Lyakurwa
+
 * **GitHub:** [@Ameprizzo](https://github.com/Ameprizzo)
 
 ---
