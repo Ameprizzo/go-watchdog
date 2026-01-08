@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Go-Watchdog Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-8 text-blue-400">🐕 Go-Watchdog Status</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {{range .}}
+            <div class="p-6 rounded-lg border {{if .IsUp}}border-green-500 bg-green-900/20{{else}}border-red-500 bg-red-900/20{{end}}">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">{{.Name}}</h2>
+                    <span class="px-2 py-1 rounded text-xs {{if .IsUp}}bg-green-500{{else}}bg-red-500{{end}} text-white">
+                        {{if .IsUp}}UP{{else}}DOWN{{end}}
+                    </span>
+                </div>
+                <p class="text-gray-400 truncate text-sm mb-4">{{.URL}}</p>
+                <div class="flex justify-between text-sm">
+                    <span>Latency: <span class="text-blue-300">{{.Latency}}</span></span>
+                    <span>Code: <span class="font-mono">{{.StatusCode}}</span></span>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </div>
+</body>
+</html>

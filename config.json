@@ -6,19 +6,28 @@
   "sites": [
     {
       "name": "Google",
-      "url": "https://www.google.com"
+      "url": "https://www.google.com",
+      "Status": ""
     },
     {
       "name": "GitHub",
-      "url": "https://github.com"
+      "url": "https://github.com",
+      "Status": ""
     },
     {
       "name": "My Portfolio",
-      "url": "https://github.com/Ameprizzo"
+      "url": "https://github.com/Ameprizzo",
+      "Status": ""
     },
     {
       "name": "Odoo ",
-      "url": "http://localhost:8069"
+      "url": "http://localhost:8069",
+      "Status": ""
+    },
+    {
+      "name": "Odoo VFD",
+      "url": "https://odoo-vfd.softnet.co.tz",
+      "Status": ""
     }
   ]
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"sync"
 )
 
 // Config represents the entire config file
@@ -35,6 +36,28 @@ type Result struct {
 	IsUp       bool
 }
 
+// StatusStore keeps the latest results safe for concurrent access
+type StatusStore struct {
+	mu      sync.RWMutex
+	Results []Result
+}
+
+// Update replaces the old results with new ones
+func (s *StatusStore) Update(newResults []Result) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Results = newResults
+}
+
+// Get returns a copy of the current results
+func (s *StatusStore) Get() []Result {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.Results
+}
+
+var Store = &StatusStore{}
+
 // LoadConfig reads and parses the config file
 func LoadConfig(filePath string) (*Config, error) {
 	file, err := os.Open(filePath)
@@ -50,6 +73,18 @@ func LoadConfig(filePath string) (*Config, error) {
 	}
 
 	return &config, nil
+}
+
+func (c *Config) AddSite(newSite Site) error {
+    // In a real app, you'd add a Mutex here too
+    c.Sites = append(c.Sites, newSite)
+    
+    // Persist to disk
+    data, err := json.MarshalIndent(c, "", "  ")
+    if err != nil {
+        return err
+    }
+    return os.WriteFile("config.json", data, 0644)
 }
 
 // CheckSite pings a single URL and returns a Result
