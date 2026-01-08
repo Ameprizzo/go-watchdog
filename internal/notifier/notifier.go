@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Ameprizzo/go-watchdog/internal/database"
 	"github.com/Ameprizzo/go-watchdog/internal/types"
 )
 
@@ -103,15 +104,28 @@ func (ns *NotificationStore) Clear() {
 type SiteStatusTracker struct {
 	mu            sync.RWMutex
 	previousState map[string]bool // siteName -> isUp
+	repos         *database.Repositories
+	siteIDMap     map[string]int // siteName -> siteID
 }
 
 func NewStatusTracker() *SiteStatusTracker {
 	return &SiteStatusTracker{
 		previousState: make(map[string]bool),
+		siteIDMap:     make(map[string]int),
 	}
 }
 
 var StatusTracker = NewStatusTracker()
+
+// SetRepositories sets the database repositories for saving notifications and audit logs
+func (st *SiteStatusTracker) SetRepositories(repos *database.Repositories) {
+	st.repos = repos
+}
+
+// SetSiteIDMap sets the mapping of site names to IDs
+func (st *SiteStatusTracker) SetSiteIDMap(siteIDMap map[string]int) {
+	st.siteIDMap = siteIDMap
+}
 
 // CheckAndNotify checks if status changed and sends notifications
 func (st *SiteStatusTracker) CheckAndNotify(result types.Result, config *types.NotificationConfig) {
@@ -184,6 +198,24 @@ func (st *SiteStatusTracker) sendDashboardNotification(result types.Result, mess
 	}
 	Notifications.Add(notification)
 	log.Println("📱 Dashboard notification:", message)
+
+	// Save to database if repositories are available
+	if st.repos != nil {
+		siteID := st.siteIDMap[result.Name]
+		notifLog := &database.NotificationLog{
+			NotificationID: notification.ID,
+			SiteID:         siteID,
+			Type:           "dashboard",
+			Message:        message,
+			Severity:       severity,
+			SentAt:         notification.Timestamp,
+			Status:         "sent",
+			RetryCount:     0,
+		}
+		if err := st.repos.Notification.Create(notifLog); err != nil {
+			log.Printf("Error saving notification log to database: %v", err)
+		}
+	}
 }
 
 // Email notification

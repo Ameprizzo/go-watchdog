@@ -1,6 +1,6 @@
 {
   "settings": {
-    "check_interval_seconds": 20,
+    "check_interval_seconds": 10,
     "timeout_seconds": 10
   },
   "sites": [

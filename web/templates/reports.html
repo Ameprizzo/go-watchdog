@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reports & Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f5f5f5;
+        color: #333;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .page-title {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+
+      .page-subtitle {
+        color: #666;
+        font-size: 14px;
+      }
+
+      .controls {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .control-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .control-group label {
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .control-group select,
+      .control-group input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      button {
+        padding: 8px 20px;
+        background: #2196f3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.3s;
+      }
+
+      button:hover {
+        background: #1976d2;
+      }
+
+      button.secondary {
+        background: #666;
+      }
+
+      button.secondary:hover {
+        background: #555;
+      }
+
+      .reports-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        gap: 20px;
+      }
+
+      .report-card {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .report-title {
+        padding: 20px;
+        background: #f5f5f5;
+        border-bottom: 1px solid #ddd;
+        font-weight: 600;
+        font-size: 16px;
+      }
+
+      .report-content {
+        padding: 20px;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .table th {
+        background: #f5f5f5;
+        padding: 10px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid #ddd;
+      }
+
+      .table td {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .table tr:hover {
+        background: #fafafa;
+      }
+
+      .status-badge {
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 12px;
+        text-align: center;
+      }
+
+      .status-compliant {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .status-non-compliant {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      .chart-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+
+      .chart-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 15px;
+      }
+
+      .metrics-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .summary-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #2196f3;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .summary-label {
+        font-size: 12px;
+        color: #666;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+
+      .summary-value {
+        font-size: 20px;
+        font-weight: 700;
+        margin-top: 8px;
+        color: #333;
+      }
+
+      .export-options {
+        padding: 20px;
+        background: #f9f9f9;
+        border-top: 1px solid #ddd;
+        display: flex;
+        gap: 10px;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 20px;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .tab {
+        padding: 15px 20px;
+        cursor: pointer;
+        background: #f5f5f5;
+        border: none;
+        font-size: 14px;
+        font-weight: 600;
+        color: #666;
+        transition: all 0.3s;
+        flex: 1;
+        text-align: center;
+      }
+
+      .tab.active {
+        background: #2196f3;
+        color: white;
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+      }
+
+      .error {
+        background: #ffebee;
+        color: #c62828;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+
+      @media (max-width: 768px) {
+        .controls {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .control-group {
+          width: 100%;
+          flex-direction: column;
+        }
+
+        .control-group select,
+        .control-group input,
+        button {
+          width: 100%;
+        }
+
+        .reports-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .metrics-summary {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <a
+        href="/"
+        style="
+          color: #2196f3;
+          text-decoration: none;
+          margin-bottom: 20px;
+          display: inline-block;
+        "
+        >← Back to Dashboard</a
+      >
+
+      <div class="header">
+        <div class="page-title">📊 Reports & Analytics</div>
+        <div class="page-subtitle">
+          Comprehensive uptime and SLA compliance reports
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <label>Report Type:</label>
+          <select id="reportType" onchange="updateReport()">
+            <option value="sla">SLA Compliance</option>
+            <option value="uptime">Uptime Analysis</option>
+            <option value="incidents">Incident Report</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label>Time Period:</label>
+          <select id="timePeriod" onchange="updateReport()">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </div>
+
+        <button onclick="updateReport()">Generate Report</button>
+        <button class="secondary" onclick="exportReport()">Export CSV</button>
+      </div>
+
+      <div id="metrics-summary" class="metrics-summary"></div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="showTab('overview')">
+          Overview
+        </button>
+        <button class="tab" onclick="showTab('details')">Details</button>
+      </div>
+
+      <div id="overview" class="tab-content active">
+        <div class="chart-container">
+          <div class="chart-title">Overall Statistics</div>
+          <canvas id="reportChart"></canvas>
+        </div>
+      </div>
+
+      <div id="details" class="tab-content">
+        <div class="report-card">
+          <div class="report-title" id="reportTitle">SLA Compliance Report</div>
+          <div class="report-content">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Site</th>
+                  <th>SLA Target</th>
+                  <th>Actual Uptime</th>
+                  <th>Status</th>
+                  <th>Gap</th>
+                </tr>
+              </thead>
+              <tbody id="reportTable">
+                <tr>
+                  <td colspan="5" class="loading">Loading report...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let chart = null;
+
+      async function updateReport() {
+        const reportType = document.getElementById("reportType").value;
+        const timePeriod = document.getElementById("timePeriod").value;
+
+        document.getElementById("reportTable").innerHTML =
+          '<tr><td colspan="5" class="loading">Loading report...</td></tr>';
+
+        try {
+          if (reportType === "sla") {
+            await loadSLAReport(timePeriod);
+          } else if (reportType === "uptime") {
+            await loadUptimeReport(timePeriod);
+          } else if (reportType === "incidents") {
+            await loadIncidentReport(timePeriod);
+          }
+        } catch (error) {
+          console.error("Error loading report:", error);
+          document.getElementById(
+            "reportTable"
+          ).innerHTML = `<tr><td colspan="5" class="error">Error loading report: ${error.message}</td></tr>`;
+        }
+      }
+
+      async function loadSLAReport(days) {
+        const response = await fetch(`/api/analytics/sla-report?days=${days}`);
+        const data = await response.json();
+
+        document.getElementById("reportTitle").textContent =
+          "SLA Compliance Report";
+
+        if (!data || data.length === 0) {
+          document.getElementById("reportTable").innerHTML =
+            '<tr><td colspan="5" class="loading">No data available</td></tr>';
+          return;
+        }
+
+        let html = "";
+        let compliant = 0,
+          total = 0;
+
+        data.forEach((item) => {
+          const status = item.sla_compliant ? "Compliant" : "Non-Compliant";
+          const statusClass = item.sla_compliant
+            ? "status-compliant"
+            : "status-non-compliant";
+          html += `
+                    <tr>
+                        <td><strong>${item.site_name}</strong></td>
+                        <td>${item.sla_target_percentage.toFixed(2)}%</td>
+                        <td>${item.actual_uptime.toFixed(2)}%</td>
+                        <td><span class="status-badge ${statusClass}">${status}</span></td>
+                        <td>${item.uptime_gap.toFixed(2)}%</td>
+                    </tr>
+                `;
+          if (item.sla_compliant) compliant++;
+          total++;
+        });
+
+        document.getElementById("reportTable").innerHTML = html;
+        updateSummary(compliant, total, data.length);
+        updateChart(data);
+      }
+
+      async function loadUptimeReport(days) {
+        const response = await fetch(`/api/analytics/dashboard-summary`);
+        const data = await response.json();
+
+        document.getElementById("reportTitle").textContent =
+          "Uptime Analysis Report";
+
+        const summaryHtml = `
+                <div class="summary-card">
+                    <div class="summary-label">Total Sites</div>
+                    <div class="summary-value">${data.total_sites}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Sites Up</div>
+                    <div class="summary-value" style="color: #4caf50;">${
+                      data.sites_up
+                    }</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Sites Down</div>
+                    <div class="summary-value" style="color: #f44336;">${
+                      data.sites_down
+                    }</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Avg Uptime</div>
+                    <div class="summary-value">${data.average_uptime.toFixed(
+                      2
+                    )}%</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Recent Incidents</div>
+                    <div class="summary-value">${
+                      data.total_incidents_last_7
+                    }</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Sites with Issues</div>
+                    <div class="summary-value">${data.sites_with_issues}</div>
+                </div>
+            `;
+
+        document.getElementById("metrics-summary").innerHTML = summaryHtml;
+
+        // Simple uptime status table
+        const html = `
+                <tr>
+                    <td>Up</td>
+                    <td>${data.sites_up}</td>
+                    <td><span class="status-badge" style="background: #d4edda; color: #155724;">Healthy</span></td>
+                    <td>${
+                      data.sites_up > 0
+                        ? ((data.sites_up / data.total_sites) * 100).toFixed(1)
+                        : 0
+                    }%</td>
+                    <td>0%</td>
+                </tr>
+                <tr>
+                    <td>Down</td>
+                    <td>${data.sites_down}</td>
+                    <td><span class="status-badge" style="background: #f8d7da; color: #721c24;">Issues</span></td>
+                    <td>${
+                      data.sites_down > 0
+                        ? ((data.sites_down / data.total_sites) * 100).toFixed(
+                            1
+                          )
+                        : 0
+                    }%</td>
+                    <td>100%</td>
+                </tr>
+            `;
+
+        document.getElementById("reportTable").innerHTML = html;
+      }
+
+      async function loadIncidentReport(days) {
+        document.getElementById("reportTitle").textContent =
+          "Incident Report (Last " + days + " days)";
+        // This would load actual incident data
+        document.getElementById("reportTable").innerHTML =
+          '<tr><td colspan="5" class="loading">Incident data loading...</td></tr>';
+      }
+
+      function updateSummary(compliant, total, sites) {
+        const percentage =
+          total > 0 ? ((compliant / total) * 100).toFixed(1) : 0;
+        const html = `
+                <div class="summary-card">
+                    <div class="summary-label">Compliant Sites</div>
+                    <div class="summary-value" style="color: #4caf50;">${compliant}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Non-Compliant Sites</div>
+                    <div class="summary-value" style="color: #f44336;">${
+                      total - compliant
+                    }</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Compliance Rate</div>
+                    <div class="summary-value">${percentage}%</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Total Sites</div>
+                    <div class="summary-value">${sites}</div>
+                </div>
+            `;
+        document.getElementById("metrics-summary").innerHTML = html;
+      }
+
+      function updateChart(data) {
+        const ctx = document.getElementById("reportChart").getContext("2d");
+
+        if (chart) {
+          chart.destroy();
+        }
+
+        const compliant = data.filter((d) => d.sla_compliant).length;
+        const nonCompliant = data.length - compliant;
+
+        chart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: data.map((d) => d.site_name),
+            datasets: [
+              {
+                label: "SLA Target",
+                data: data.map((d) => d.sla_target_percentage),
+                backgroundColor: "rgba(33, 150, 243, 0.5)",
+              },
+              {
+                label: "Actual Uptime",
+                data: data.map((d) => d.actual_uptime),
+                backgroundColor: data.map((d) =>
+                  d.sla_compliant ? "#4caf50" : "#f44336"
+                ),
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                  callback: function (value) {
+                    return value + "%";
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+
+      function showTab(tabName) {
+        document.querySelectorAll(".tab-content").forEach((tab) => {
+          tab.classList.remove("active");
+        });
+        document.querySelectorAll(".tab").forEach((btn) => {
+          btn.classList.remove("active");
+        });
+
+        document.getElementById(tabName).classList.add("active");
+        event.target.classList.add("active");
+      }
+
+      function exportReport() {
+        const reportType = document.getElementById("reportType").value;
+        const timePeriod = document.getElementById("timePeriod").value;
+
+        // Create CSV from table
+        const table = document.getElementById("reportTable");
+        let csv = "Site,Target,Actual,Status,Gap\n";
+
+        table.querySelectorAll("tr").forEach((row) => {
+          const cells = row.querySelectorAll("td");
+          if (cells.length === 5) {
+            csv += `"${cells[0].textContent}","${cells[1].textContent}","${cells[2].textContent}","${cells[3].textContent}","${cells[4].textContent}"\n`;
+          }
+        });
+
+        // Download CSV
+        const link = document.createElement("a");
+        link.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+        link.download = `${reportType}-report-${timePeriod}d.csv`;
+        link.click();
+      }
+
+      // Load initial report
+      updateReport();
+    </script>
+  </body>
+</html>

@@ -33,6 +33,7 @@ type Site struct {
 
 // Result holds the outcome of a status check
 type Result struct {
+	ID         int
 	Name       string
 	URL        string
 	StatusCode int

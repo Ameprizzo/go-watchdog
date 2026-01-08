@@ -83,8 +83,8 @@ docker run -p 8080:8080 go-watchdog
 ## 📈 Roadmap
 
 * [ ] **Historical Tracking:** Implement uptime percentage tracking with a lightweight SQLite database.
-* [ ] **Alerting:** Add support for Discord and Slack webhooks for instant notifications.
-* [ ] **Custom Intervals:** Allow per-service check intervals (e.g., check API every 10s, but Blog every 5m).
+* [✅] **Alerting:** Add support for Discord and Slack webhooks for instant notifications.
+* [] **Custom Intervals:** Allow per-service check intervals (e.g., check API every 10s, but Blog every 5m).
 * [ ] **Unit Testing:** Add comprehensive tests for the monitoring and notification logic.
 
 ## 👤 Author
