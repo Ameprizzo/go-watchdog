@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Ameprizzo/go-watchdog/internal/monitor"
+	"github.com/Ameprizzo/go-watchdog/internal/notifier"
 )
 
 func main() {
@@ -154,6 +155,11 @@ func runChecks(cfg *monitor.Config) {
 		}
 		fmt.Printf("%s %-20s | Latency: %v | Status: %d\n",
 			icon, res.Name, res.Latency.Round(time.Millisecond), res.StatusCode)
+		
+		// Check for state change and send alert if status flipped
+		if monitor.Store.CheckAndUpdateState(res.URL, res.IsUp) {
+			notifier.Alert(res.Name, res.URL, res.IsUp)
+		}
 	}
 
 	// Update the global store for the Web UI

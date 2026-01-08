@@ -38,8 +38,9 @@ type Result struct {
 
 // StatusStore keeps the latest results safe for concurrent access
 type StatusStore struct {
-	mu      sync.RWMutex
-	Results []Result
+	mu            sync.RWMutex
+	Results       []Result
+	PreviousState map[string]bool // map[URL]IsUp
 }
 
 // Update replaces the old results with new ones
@@ -56,7 +57,37 @@ func (s *StatusStore) Get() []Result {
 	return s.Results
 }
 
-var Store = &StatusStore{}
+func NewStore() *StatusStore {
+	return &StatusStore{
+		PreviousState: make(map[string]bool),
+	}
+}
+
+// CheckAndUpdateState checks if a site's status changed and updates the internal state
+// Returns true if the status changed (for alerting), false otherwise
+func (s *StatusStore) CheckAndUpdateState(url string, isUp bool) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Get previous state (default to true if not found, so we don't alert on first check)
+	previousIsUp, exists := s.PreviousState[url]
+
+	// If it's the first time seeing this URL, just store the state and don't alert
+	if !exists {
+		s.PreviousState[url] = isUp
+		return false
+	}
+
+	// Check if state changed
+	stateChanged := previousIsUp != isUp
+
+	// Update the state
+	s.PreviousState[url] = isUp
+
+	return stateChanged
+}
+
+var Store = NewStore()
 
 // LoadConfig reads and parses the config file
 func LoadConfig(filePath string) (*Config, error) {
