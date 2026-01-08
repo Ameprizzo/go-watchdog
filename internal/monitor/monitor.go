@@ -2,7 +2,9 @@ package monitor
 
 import (
 	"encoding/json"
+	"net/http"
 	"os"
+	"time"
 )
 
 // Config represents the entire config file
@@ -24,6 +26,15 @@ type Site struct {
 	Status string // This will be used later (Up/Down)
 }
 
+// Result holds the outcome of a status check
+type Result struct {
+	Name       string
+	URL        string
+	StatusCode int
+	Latency    time.Duration
+	IsUp       bool
+}
+
 // LoadConfig reads and parses the config file
 func LoadConfig(filePath string) (*Config, error) {
 	file, err := os.Open(filePath)
@@ -39,4 +50,34 @@ func LoadConfig(filePath string) (*Config, error) {
 	}
 
 	return &config, nil
+}
+
+// CheckSite pings a single URL and returns a Result
+func CheckSite(site Site, timeout int) Result {
+	client := http.Client{
+		Timeout: time.Duration(timeout) * time.Second,
+	}
+
+	start := time.Now()
+	resp, err := client.Get(site.URL)
+	latency := time.Since(start)
+
+	if err != nil || resp.StatusCode >= 400 {
+		return Result{
+			Name:       site.Name,
+			URL:        site.URL,
+			StatusCode: 0,
+			IsUp:       false,
+			Latency:    latency,
+		}
+	}
+	defer resp.Body.Close()
+
+	return Result{
+		Name:       site.Name,
+		URL:        site.URL,
+		StatusCode: resp.StatusCode,
+		Latency:    latency,
+		IsUp:       true,
+	}
 }
