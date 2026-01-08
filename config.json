@@ -1,6 +1,6 @@
 {
   "settings": {
-    "check_interval_seconds": 60,
+    "check_interval_seconds": 10,
     "timeout_seconds": 10
   },
   "sites": [
@@ -15,6 +15,10 @@
     {
       "name": "My Portfolio",
       "url": "https://github.com/Ameprizzo"
+    },
+    {
+      "name": "Odoo ",
+      "url": "http://localhost:8069"
     }
   ]
 }
