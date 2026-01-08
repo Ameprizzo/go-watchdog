@@ -22,20 +22,30 @@
                     
                     <!-- Notifications Dropdown -->
                     <div id="notificationsPanel" class="hidden absolute right-0 mt-2 w-96 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-50 max-h-96 overflow-y-auto">
-                        <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+                        <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-750">
                             <h3 class="font-bold">Recent Alerts</h3>
-                            <button onclick="clearNotifications()" class="text-xs text-red-400 hover:text-red-300">Clear All</button>
+                            <div class="flex gap-2">
+                                <button onclick="markAllRead()" class="text-xs text-blue-400 hover:text-blue-300 font-semibold">Mark All Read</button>
+                                <button onclick="clearNotifications()" class="text-xs text-red-400 hover:text-red-300 font-semibold">Clear All</button>
+                            </div>
                         </div>
                         <div class="divide-y divide-gray-700">
                             {{range .Notifications}}
-                            <div class="p-4 hover:bg-gray-750 {{if not .Read}}bg-blue-900/10{{end}}">
+                            <div class="notification-item p-4 hover:bg-gray-750 {{if not .Read}}bg-blue-900/20 border-l-4 border-blue-500{{else}}border-l-4 border-transparent{{end}}" data-id="{{.ID}}">
                                 <div class="flex justify-between items-start mb-2">
-                                    <span class="font-bold text-sm">{{.SiteName}}</span>
+                                    <div class="flex-1">
+                                        <span class="font-bold text-sm">{{.SiteName}}</span>
+                                        {{if not .Read}}<span class="ml-2 text-xs bg-blue-600 text-white px-2 py-0.5 rounded">New</span>{{end}}
+                                    </div>
                                     <span class="text-xs text-gray-400">{{.Timestamp.Format "15:04"}}</span>
                                 </div>
-                                <p class="text-sm {{if eq .Severity "error"}}text-red-400{{else if eq .Severity "success"}}text-green-400{{else}}text-gray-300{{end}}">
+                                <p class="text-sm {{if eq .Severity "error"}}text-red-400{{else if eq .Severity "success"}}text-green-400{{else}}text-gray-300{{end}} mb-2">
                                     {{.Message}}
                                 </p>
+                                <div class="flex gap-2">
+                                    {{if not .Read}}<button onclick="markNotificationRead('{{.ID}}')" class="text-xs text-blue-400 hover:text-blue-300 px-2 py-1 rounded hover:bg-blue-900/30">✓ Mark Read</button>{{end}}
+                                    <button onclick="removeNotification('{{.ID}}')" class="text-xs text-gray-400 hover:text-gray-300 px-2 py-1 rounded hover:bg-gray-700">✕ Dismiss</button>
+                                </div>
                             </div>
                             {{else}}
                             <div class="p-8 text-center text-gray-400">
@@ -111,12 +121,70 @@
             }
         });
 
+        // Mark single notification as read
+        function markNotificationRead(id) {
+            fetch('/api/notifications/mark-read', {
+                method: 'POST',
+                body: new URLSearchParams({ id: id })
+            }).then(() => {
+                const notifItem = document.querySelector(`[data-id="${id}"]`);
+                if (notifItem) {
+                    notifItem.classList.remove('bg-blue-900/20', 'border-l-4', 'border-blue-500');
+                    notifItem.classList.add('border-l-4', 'border-transparent');
+                    const markBtn = notifItem.querySelector('button[onclick^="markNotificationRead"]');
+                    if (markBtn) markBtn.remove();
+                    const newBadge = notifItem.querySelector('[class*="bg-blue-600"]');
+                    if (newBadge) newBadge.remove();
+                }
+                updateUnreadCount();
+            });
+        }
+
+        // Mark all notifications as read
+        function markAllRead() {
+            fetch('/api/notifications/mark-all-read', { method: 'POST' })
+                .then(() => {
+                    document.querySelectorAll('.notification-item').forEach(item => {
+                        item.classList.remove('bg-blue-900/20', 'border-l-4', 'border-blue-500');
+                        item.classList.add('border-l-4', 'border-transparent');
+                        const markBtn = item.querySelector('button[onclick^="markNotificationRead"]');
+                        if (markBtn) markBtn.remove();
+                        const newBadge = item.querySelector('[class*="bg-blue-600"]');
+                        if (newBadge) newBadge.remove();
+                    });
+                    updateUnreadCount();
+                });
+        }
+
+        // Remove individual notification
+        function removeNotification(id) {
+            const notifItem = document.querySelector(`[data-id="${id}"]`);
+            if (notifItem) {
+                notifItem.style.opacity = '0.5';
+                notifItem.style.textDecoration = 'line-through';
+            }
+        }
+
         // Clear all notifications
         function clearNotifications() {
             if (confirm('Clear all notifications?')) {
                 fetch('/api/notifications/clear', { method: 'POST' })
                     .then(() => location.reload());
             }
+        }
+
+        // Update unread count
+        function updateUnreadCount() {
+            fetch('/api/notifications/unread-count')
+                .then(res => res.json())
+                .then(data => {
+                    const badge = document.querySelector('button[onclick="toggleNotifications()"] span');
+                    if (badge && data.count > 0) {
+                        badge.textContent = data.count;
+                    } else if (badge && data.count === 0) {
+                        badge.parentElement.removeChild(badge);
+                    }
+                });
         }
     </script>
 </body>
