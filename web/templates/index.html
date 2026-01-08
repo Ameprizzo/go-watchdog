@@ -9,9 +9,45 @@
     <nav class="bg-gray-800 border-b border-gray-700">
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-2xl font-bold text-blue-400">🐕 Go-Watchdog</h1>
-            <div class="flex gap-4">
+            <div class="flex gap-4 items-center">
+                <div class="relative">
+                    <button onclick="toggleNotifications()" class="relative px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition">
+                        🔔 Notifications
+                        {{if gt .UnreadCount 0}}
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                            {{.UnreadCount}}
+                        </span>
+                        {{end}}
+                    </button>
+                    
+                    <!-- Notifications Dropdown -->
+                    <div id="notificationsPanel" class="hidden absolute right-0 mt-2 w-96 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-50 max-h-96 overflow-y-auto">
+                        <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+                            <h3 class="font-bold">Recent Alerts</h3>
+                            <button onclick="clearNotifications()" class="text-xs text-red-400 hover:text-red-300">Clear All</button>
+                        </div>
+                        <div class="divide-y divide-gray-700">
+                            {{range .Notifications}}
+                            <div class="p-4 hover:bg-gray-750 {{if not .Read}}bg-blue-900/10{{end}}">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="font-bold text-sm">{{.SiteName}}</span>
+                                    <span class="text-xs text-gray-400">{{.Timestamp.Format "15:04"}}</span>
+                                </div>
+                                <p class="text-sm {{if eq .Severity "error"}}text-red-400{{else if eq .Severity "success"}}text-green-400{{else}}text-gray-300{{end}}">
+                                    {{.Message}}
+                                </p>
+                            </div>
+                            {{else}}
+                            <div class="p-8 text-center text-gray-400">
+                                <p>No notifications yet</p>
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
                 <a href="/" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 transition">Dashboard</a>
                 <a href="/manage" class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition">Manage</a>
+                <a href="/notifications" class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition">Notifications</a>
             </div>
         </div>
     </nav>
@@ -58,6 +94,30 @@
             const el = document.getElementById('time');
             if (el) el.textContent = timeStr;
         }, 1000);
+
+        // Toggle notifications panel
+        function toggleNotifications() {
+            const panel = document.getElementById('notificationsPanel');
+            panel.classList.toggle('hidden');
+        }
+
+        // Close notifications when clicking outside
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('notificationsPanel');
+            const button = e.target.closest('button[onclick="toggleNotifications()"]');
+            
+            if (!panel.contains(e.target) && !button) {
+                panel.classList.add('hidden');
+            }
+        });
+
+        // Clear all notifications
+        function clearNotifications() {
+            if (confirm('Clear all notifications?')) {
+                fetch('/api/notifications/clear', { method: 'POST' })
+                    .then(() => location.reload());
+            }
+        }
     </script>
 </body>
 </html>

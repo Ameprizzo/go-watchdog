@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Notification Settings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white">
+    <nav class="bg-gray-800 border-b border-gray-700">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-blue-400">🐕 Go-Watchdog</h1>
+            <div class="flex gap-4">
+                <a href="/" class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition">Dashboard</a>
+                <a href="/manage" class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition">Manage</a>
+                <a href="/notifications" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 transition">Notifications</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-bold">🔔 Notification Settings</h2>
+            <button onclick="openChannelModal()" class="bg-green-600 px-6 py-3 rounded-lg font-bold hover:bg-green-500 transition">
+                + Add Channel
+            </button>
+        </div>
+
+        <!-- Info Box -->
+        <div class="bg-blue-900/30 border border-blue-700 rounded-lg p-4 mb-8">
+            <p class="text-blue-200">
+                <strong>ℹ️ Note:</strong> Notifications are sent when a site goes DOWN or comes back UP (status changes).
+            </p>
+        </div>
+
+        <!-- Configured Channels -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {{range .Notifications.Channels}}
+            <div class="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">
+                            {{if eq .Type "email"}}📧
+                            {{else if eq .Type "discord"}}💬
+                            {{else if eq .Type "telegram"}}✈️
+                            {{else if eq .Type "slack"}}💼
+                            {{else}}🔔{{end}}
+                        </span>
+                        <div>
+                            <h3 class="text-xl font-bold capitalize">{{.Type}}</h3>
+                            <span class="text-sm {{if .Enabled}}text-green-400{{else}}text-gray-500{{end}}">
+                                {{if .Enabled}}Active{{else}}Disabled{{end}}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <form action="/notifications/toggle" method="POST" style="display:inline;">
+                            <input type="hidden" name="type" value="{{.Type}}">
+                            <button type="submit" class="px-3 py-1 rounded {{if .Enabled}}bg-yellow-600 hover:bg-yellow-500{{else}}bg-green-600 hover:bg-green-500{{end}} text-xs font-bold">
+                                {{if .Enabled}}Disable{{else}}Enable{{end}}
+                            </button>
+                        </form>
+                        <form action="/notifications/delete" method="POST" style="display:inline;"
+                              onsubmit="return confirm('Delete this notification channel?')">
+                            <input type="hidden" name="type" value="{{.Type}}">
+                            <button type="submit" class="px-3 py-1 rounded bg-red-600 hover:bg-red-500 text-xs font-bold">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="text-sm text-gray-400 space-y-1">
+                    {{if eq .Type "email"}}
+                        <p>📬 To: {{index .Settings "to"}}</p>
+                        <p>🖥️ Server: {{index .Settings "smtp_host"}}:{{index .Settings "smtp_port"}}</p>
+                    {{else if eq .Type "discord"}}
+                        <p>🔗 Webhook configured</p>
+                    {{else if eq .Type "telegram"}}
+                        <p>💬 Chat ID: {{index .Settings "chat_id"}}</p>
+                    {{else if eq .Type "slack"}}
+                        <p>🔗 Webhook configured</p>
+                    {{end}}
+                </div>
+            </div>
+            {{else}}
+            <div class="col-span-full text-center py-12 bg-gray-800 rounded-lg border border-gray-700">
+                <p class="text-gray-400 text-lg mb-4">No notification channels configured</p>
+                <button onclick="openChannelModal()" class="text-blue-400 hover:text-blue-300 underline">
+                    Add your first channel
+                </button>
+            </div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Add Channel Modal -->
+    <div id="channelModal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg p-8 max-w-2xl w-full mx-4 border border-gray-700 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold">Add Notification Channel</h3>
+                <button onclick="closeChannelModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+
+            <!-- Channel Type Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium mb-3">Select Channel Type</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="selectChannelType('email')" class="channel-type-btn p-4 rounded bg-gray-700 hover:bg-gray-600 border-2 border-transparent">
+                        <span class="text-2xl block mb-2">📧</span>
+                        <span class="font-bold">Email</span>
+                    </button>
+                    <button onclick="selectChannelType('discord')" class="channel-type-btn p-4 rounded bg-gray-700 hover:bg-gray-600 border-2 border-transparent">
+                        <span class="text-2xl block mb-2">💬</span>
+                        <span class="font-bold">Discord</span>
+                    </button>
+                    <button onclick="selectChannelType('telegram')" class="channel-type-btn p-4 rounded bg-gray-700 hover:bg-gray-600 border-2 border-transparent">
+                        <span class="text-2xl block mb-2">✈️</span>
+                        <span class="font-bold">Telegram</span>
+                    </button>
+                    <button onclick="selectChannelType('slack')" class="channel-type-btn p-4 rounded bg-gray-700 hover:bg-gray-600 border-2 border-transparent">
+                        <span class="text-2xl block mb-2">💼</span>
+                        <span class="font-bold">Slack</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Channel Forms (Hidden by default) -->
+            <form action="/notifications/add" method="POST" id="channelForm" class="hidden">
+                <input type="hidden" name="type" id="channelType">
+                
+                <div class="mb-4">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="enabled" checked class="w-4 h-4">
+                        <span class="text-sm font-medium">Enable this channel</span>
+                    </label>
+                </div>
+
+                <!-- Email Settings -->
+                <div id="emailSettings" class="channel-settings hidden space-y-4">
+                    <h4 class="font-bold text-lg mb-3">Email Configuration</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm mb-2">SMTP Host</label>
+                            <input type="text" name="smtp_host" placeholder="smtp.gmail.com" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-2">SMTP Port</label>
+                            <input type="text" name="smtp_port" placeholder="587" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-2">Username</label>
+                        <input type="text" name="username" placeholder="your@email.com" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-2">Password</label>
+                        <input type="password" name="password" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-2">From Address</label>
+                        <input type="email" name="from" placeholder="noreply@watchdog.com" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-2">To Address</label>
+                        <input type="email" name="to" placeholder="alerts@yourdomain.com" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                    </div>
+                </div>
+
+                <!-- Discord Settings -->
+                <div id="discordSettings" class="channel-settings hidden space-y-4">
+                    <h4 class="font-bold text-lg mb-3">Discord Configuration</h4>
+                    <div>
+                        <label class="block text-sm mb-2">Webhook URL</label>
+                        <input type="url" name="webhook_url" placeholder="https://discord.com/api/webhooks/..." class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                        <p class="text-xs text-gray-400 mt-1">Create a webhook in your Discord server settings</p>
+                    </div>
+                </div>
+
+                <!-- Telegram Settings -->
+                <div id="telegramSettings" class="channel-settings hidden space-y-4">
+                    <h4 class="font-bold text-lg mb-3">Telegram Configuration</h4>
+                    <div>
+                        <label class="block text-sm mb-2">Bot Token</label>
+                        <input type="text" name="bot_token" placeholder="123456:ABC-DEF..." class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                        <p class="text-xs text-gray-400 mt-1">Get from @BotFather on Telegram</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-2">Chat ID</label>
+                        <input type="text" name="chat_id" placeholder="-1001234567890" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                        <p class="text-xs text-gray-400 mt-1">Your chat/group ID (use @userinfobot)</p>
+                    </div>
+                </div>
+
+                <!-- Slack Settings -->
+                <div id="slackSettings" class="channel-settings hidden space-y-4">
+                    <h4 class="font-bold text-lg mb-3">Slack Configuration</h4>
+                    <div>
+                        <label class="block text-sm mb-2">Webhook URL</label>
+                        <input type="url" name="webhook_url" placeholder="https://hooks.slack.com/services/..." class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                        <p class="text-xs text-gray-400 mt-1">Create an incoming webhook in Slack</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-500 p-3 rounded font-bold">
+                        Save Channel
+                    </button>
+                    <button type="button" onclick="closeChannelModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 p-3 rounded font-bold">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openChannelModal() {
+            document.getElementById('channelModal').classList.remove('hidden');
+            document.getElementById('channelModal').classList.add('flex');
+        }
+
+        function closeChannelModal() {
+            document.getElementById('channelModal').classList.add('hidden');
+            document.getElementById('channelModal').classList.remove('flex');
+            document.getElementById('channelForm').classList.add('hidden');
+            document.querySelectorAll('.channel-settings').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.channel-type-btn').forEach(el => {
+                el.classList.remove('border-blue-500', 'bg-blue-900/30');
+            });
+        }
+
+        function selectChannelType(type) {
+            // Highlight selected button
+            document.querySelectorAll('.channel-type-btn').forEach(el => {
+                el.classList.remove('border-blue-500', 'bg-blue-900/30');
+            });
+            event.target.closest('.channel-type-btn').classList.add('border-blue-500', 'bg-blue-900/30');
+
+            // Show form
+            document.getElementById('channelForm').classList.remove('hidden');
+            document.getElementById('channelType').value = type;
+
+            // Hide all settings
+            document.querySelectorAll('.channel-settings').forEach(el => el.classList.add('hidden'));
+
+            // Show selected settings
+            document.getElementById(type + 'Settings').classList.remove('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('channelModal').addEventListener('click', function(e) {
+            if (e.target === this) closeChannelModal();
+        });
+
+        // Close with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeChannelModal();
+        });
+    </script>
+</body>
+</html>

@@ -29,5 +29,49 @@
       "url": "http://localhost:8069",
       "Status": ""
     }
-  ]
+  ],
+  "notifications": {
+    "enabled": true,
+    "channels": [
+      {
+        "type": "dashboard",
+        "enabled": true,
+        "settings": {}
+      },
+      {
+        "type": "email",
+        "enabled": false,
+        "settings": {
+          "from": "watchdog@yourdomain.com",
+          "password": "your-app-password",
+          "smtp_host": "smtp.gmail.com",
+          "smtp_port": "587",
+          "to": "alerts@yourdomain.com",
+          "username": "your-email@gmail.com"
+        }
+      },
+      {
+        "type": "discord",
+        "enabled": false,
+        "settings": {
+          "webhook_url": "https://discord.com/api/webhooks/YOUR_WEBHOOK_URL"
+        }
+      },
+      {
+        "type": "telegram",
+        "enabled": false,
+        "settings": {
+          "bot_token": "YOUR_BOT_TOKEN",
+          "chat_id": "YOUR_CHAT_ID"
+        }
+      },
+      {
+        "type": "slack",
+        "enabled": false,
+        "settings": {
+          "webhook_url": "https://hooks.slack.com/services/YOUR_WEBHOOK_URL"
+        }
+      }
+    ]
+  }
 }

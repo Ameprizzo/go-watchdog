@@ -6,12 +6,16 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/Ameprizzo/go-watchdog/internal/types"
 )
 
 // Config represents the entire config file
 type Config struct {
-	Settings Settings `json:"settings"`
-	Sites    []Site   `json:"sites"`
+	Settings      Settings                  `json:"settings"`
+	Sites         []Site                    `json:"sites"`
+	Notifications *types.NotificationConfig `json:"notifications"`
+	mu            sync.RWMutex
 }
 
 // Settings represents global app behavior
@@ -38,9 +42,8 @@ type Result struct {
 
 // StatusStore keeps the latest results safe for concurrent access
 type StatusStore struct {
-	mu            sync.RWMutex
-	Results       []Result
-	PreviousState map[string]bool // map[URL]IsUp
+	mu      sync.RWMutex
+	Results []Result
 }
 
 // Update replaces the old results with new ones
@@ -57,37 +60,7 @@ func (s *StatusStore) Get() []Result {
 	return s.Results
 }
 
-func NewStore() *StatusStore {
-	return &StatusStore{
-		PreviousState: make(map[string]bool),
-	}
-}
-
-// CheckAndUpdateState checks if a site's status changed and updates the internal state
-// Returns true if the status changed (for alerting), false otherwise
-func (s *StatusStore) CheckAndUpdateState(url string, isUp bool) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// Get previous state (default to true if not found, so we don't alert on first check)
-	previousIsUp, exists := s.PreviousState[url]
-
-	// If it's the first time seeing this URL, just store the state and don't alert
-	if !exists {
-		s.PreviousState[url] = isUp
-		return false
-	}
-
-	// Check if state changed
-	stateChanged := previousIsUp != isUp
-
-	// Update the state
-	s.PreviousState[url] = isUp
-
-	return stateChanged
-}
-
-var Store = NewStore()
+var Store = &StatusStore{}
 
 // LoadConfig reads and parses the config file
 func LoadConfig(filePath string) (*Config, error) {
@@ -103,23 +76,30 @@ func LoadConfig(filePath string) (*Config, error) {
 		return nil, err
 	}
 
+	// Initialize notifications if not present
+	if config.Notifications == nil {
+		config.Notifications = &types.NotificationConfig{
+			Enabled:  true,
+			Channels: []types.ChannelSettings{},
+		}
+	}
+
 	return &config, nil
 }
 
 func (c *Config) AddSite(newSite Site) error {
-	// In a real app, you'd add a Mutex here too
-	c.Sites = append(c.Sites, newSite)
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	// Persist to disk
-	data, err := json.MarshalIndent(c, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile("config.json", data, 0644)
+	c.Sites = append(c.Sites, newSite)
+	return c.save()
 }
 
 // UpdateSettings changes global interval/timeout and saves to disk
 func (c *Config) UpdateSettings(interval, timeout int) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	c.Settings.CheckInterval = interval
 	c.Settings.Timeout = timeout
 	return c.save()
@@ -127,12 +107,61 @@ func (c *Config) UpdateSettings(interval, timeout int) error {
 
 // DeleteSite removes a site by its name and saves
 func (c *Config) DeleteSite(name string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	for i, s := range c.Sites {
 		if s.Name == name {
 			c.Sites = append(c.Sites[:i], c.Sites[i+1:]...)
 			break
 		}
 	}
+	return c.save()
+}
+
+// UpdateNotificationSettings updates notification configuration
+func (c *Config) UpdateNotificationSettings(notifConfig *types.NotificationConfig) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.Notifications = notifConfig
+	return c.save()
+}
+
+// AddNotificationChannel adds or updates a notification channel
+func (c *Config) AddNotificationChannel(channel types.ChannelSettings) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Check if channel already exists
+	found := false
+	for i, ch := range c.Notifications.Channels {
+		if ch.Type == channel.Type {
+			c.Notifications.Channels[i] = channel
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		c.Notifications.Channels = append(c.Notifications.Channels, channel)
+	}
+
+	return c.save()
+}
+
+// RemoveNotificationChannel removes a notification channel
+func (c *Config) RemoveNotificationChannel(channelType types.NotificationChannel) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for i, ch := range c.Notifications.Channels {
+		if ch.Type == channelType {
+			c.Notifications.Channels = append(c.Notifications.Channels[:i], c.Notifications.Channels[i+1:]...)
+			break
+		}
+	}
+
 	return c.save()
 }
 
@@ -146,7 +175,7 @@ func (c *Config) save() error {
 }
 
 // CheckSite pings a single URL and returns a Result
-func CheckSite(site Site, timeout int) Result {
+func CheckSite(site Site, timeout int) types.Result {
 	client := http.Client{
 		Timeout: time.Duration(timeout) * time.Second,
 	}
@@ -156,7 +185,7 @@ func CheckSite(site Site, timeout int) Result {
 	latency := time.Since(start)
 
 	if err != nil || resp.StatusCode >= 400 {
-		return Result{
+		return types.Result{
 			Name:       site.Name,
 			URL:        site.URL,
 			StatusCode: 0,
@@ -166,7 +195,7 @@ func CheckSite(site Site, timeout int) Result {
 	}
 	defer resp.Body.Close()
 
-	return Result{
+	return types.Result{
 		Name:       site.Name,
 		URL:        site.URL,
 		StatusCode: resp.StatusCode,
