@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
-	"time"
 	"sync"
+	"time"
 )
 
 // Config represents the entire config file
@@ -76,15 +76,42 @@ func LoadConfig(filePath string) (*Config, error) {
 }
 
 func (c *Config) AddSite(newSite Site) error {
-    // In a real app, you'd add a Mutex here too
-    c.Sites = append(c.Sites, newSite)
-    
-    // Persist to disk
-    data, err := json.MarshalIndent(c, "", "  ")
-    if err != nil {
-        return err
-    }
-    return os.WriteFile("config.json", data, 0644)
+	// In a real app, you'd add a Mutex here too
+	c.Sites = append(c.Sites, newSite)
+
+	// Persist to disk
+	data, err := json.MarshalIndent(c, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile("config.json", data, 0644)
+}
+
+// UpdateSettings changes global interval/timeout and saves to disk
+func (c *Config) UpdateSettings(interval, timeout int) error {
+	c.Settings.CheckInterval = interval
+	c.Settings.Timeout = timeout
+	return c.save()
+}
+
+// DeleteSite removes a site by its name and saves
+func (c *Config) DeleteSite(name string) error {
+	for i, s := range c.Sites {
+		if s.Name == name {
+			c.Sites = append(c.Sites[:i], c.Sites[i+1:]...)
+			break
+		}
+	}
+	return c.save()
+}
+
+// Private helper to save to config.json
+func (c *Config) save() error {
+	data, err := json.MarshalIndent(c, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile("config.json", data, 0644)
 }
 
 // CheckSite pings a single URL and returns a Result

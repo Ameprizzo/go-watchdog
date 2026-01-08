@@ -1,6 +1,6 @@
 {
   "settings": {
-    "check_interval_seconds": 10,
+    "check_interval_seconds": 20,
     "timeout_seconds": 10
   },
   "sites": [
@@ -20,13 +20,13 @@
       "Status": ""
     },
     {
-      "name": "Odoo ",
-      "url": "http://localhost:8069",
+      "name": "Odoo VFD",
+      "url": "https://odoo-vfd.softnet.co.tz",
       "Status": ""
     },
     {
-      "name": "Odoo VFD",
-      "url": "https://odoo-vfd.softnet.co.tz",
+      "name": "My Odoo",
+      "url": "http://localhost:8069",
       "Status": ""
     }
   ]
