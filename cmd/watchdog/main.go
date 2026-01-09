@@ -9,15 +9,20 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Ameprizzo/go-watchdog/internal/backup"
 	"github.com/Ameprizzo/go-watchdog/internal/database"
 	"github.com/Ameprizzo/go-watchdog/internal/monitor"
 	"github.com/Ameprizzo/go-watchdog/internal/notifier"
+	"github.com/Ameprizzo/go-watchdog/internal/sync"
 	"github.com/Ameprizzo/go-watchdog/internal/types"
 )
 
 var currentTicker *time.Ticker
 var globalRepos *database.Repositories
 var globalMaintenance *database.MaintenanceService
+var globalSyncService *sync.SyncService
+var globalBackupService *backup.BackupService
+var backupTicker *time.Ticker
 
 func main() {
 	// Initialize database
@@ -78,8 +83,25 @@ func main() {
 	}
 	notifier.StatusTracker.SetSiteIDMap(siteIDMap)
 
+	// Initialize sync service (Week 5)
+	globalSyncService = sync.NewSyncService(repos, cfg)
+	fmt.Println("🔄 Sync service initialized")
+
+	// Initialize backup service (Week 5)
+	backupSvc, err := backup.NewBackupService(repos, "backups", 10)
+	if err != nil {
+		log.Fatalf("Failed to initialize backup service: %v", err)
+	}
+	globalBackupService = backupSvc
+
+	// Start periodic backups (daily at 2 AM)
+	go startPeriodicBackups()
+
 	// Setup API routes (Phase 3)
 	setupAPIRoutes(repos)
+
+	// Setup Sync & Backup routes (Week 5)
+	setupSyncAndBackupRoutes(repos)
 
 	// Start the web server in the background
 	go func() {
@@ -531,4 +553,34 @@ func runChecks(cfg *monitor.Config) {
 
 	// Update the global store for the Web UI
 	monitor.Store.Update(monitorResults)
+}
+
+// startPeriodicBackups runs database backups on a schedule
+func startPeriodicBackups() {
+	if globalBackupService == nil {
+		log.Printf("❌ Backup service not initialized")
+		return
+	}
+
+	// Run first backup immediately
+	result, err := globalBackupService.CreateBackup()
+	if err != nil {
+		log.Printf("❌ Initial backup failed: %v", err)
+	} else if result.Success {
+		log.Printf("✅ Initial backup created: %s (%.2f MB)", result.BackupFile, float64(result.CompressedSize)/1024/1024)
+	}
+
+	// Schedule daily backups
+	backupTicker = time.NewTicker(24 * time.Hour)
+	defer backupTicker.Stop()
+
+	for range backupTicker.C {
+		log.Printf("⏱️ Running scheduled daily backup...")
+		result, err := globalBackupService.CreateBackup()
+		if err != nil {
+			log.Printf("❌ Scheduled backup failed: %v", err)
+		} else if result.Success {
+			log.Printf("✅ Scheduled backup created: %s (%.2f MB)", result.BackupFile, float64(result.CompressedSize)/1024/1024)
+		}
+	}
 }
