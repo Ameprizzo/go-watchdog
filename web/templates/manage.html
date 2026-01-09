@@ -1,149 +1,345 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Manage Watchdog</title>
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-900 text-white">
+  </head>
+  <body class="bg-gray-900 text-white">
     <nav class="bg-gray-800 border-b border-gray-700">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-blue-400">🐕 Go-Watchdog</h1>
-            <div class="flex gap-4">
-                <a href="/" class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition">Dashboard</a>
-                <a href="/manage" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 transition">Manage</a>
-                <a href="/notifications" class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition">Notifications</a>
-            </div>
+      <div
+        class="container mx-auto px-4 py-4 flex justify-between items-center"
+      >
+        <h1 class="text-2xl font-bold text-blue-400">🐕 Go-Watchdog</h1>
+        <div class="flex gap-4">
+          <a
+            href="/"
+            class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition"
+            >Dashboard</a
+          >
+          <a
+            href="/manage"
+            class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 transition"
+            >Manage</a
+          >
+          <a
+            href="/notifications"
+            class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition"
+            >Notifications</a
+          >
         </div>
+      </div>
     </nav>
 
     <div class="container mx-auto px-4 py-8 max-w-6xl">
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="text-3xl font-bold">🛠 Configuration Management</h2>
-            <button onclick="openModal()" class="bg-green-600 px-6 py-3 rounded-lg font-bold hover:bg-green-500 transition flex items-center gap-2">
-                <span class="text-xl">+</span> Add New Site
-            </button>
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="text-3xl font-bold">🛠 Configuration Management</h2>
+        <button
+          onclick="openModal()"
+          class="bg-green-600 px-6 py-3 rounded-lg font-bold hover:bg-green-500 transition flex items-center gap-2"
+        >
+          <span class="text-xl">+</span> Add New Site
+        </button>
+      </div>
+
+      <!-- Global Settings Section -->
+      <section class="mb-8 bg-gray-800 p-6 rounded-lg border border-gray-700">
+        <h3 class="text-xl font-semibold mb-4 text-blue-400">
+          Global Settings
+        </h3>
+        <form
+          action="/manage/settings"
+          method="POST"
+          class="flex gap-4 items-end flex-wrap"
+        >
+          <div>
+            <label class="block text-sm mb-2 text-gray-300"
+              >Check Interval (seconds)</label
+            >
+            <input
+              type="number"
+              name="interval"
+              value="{{.Settings.CheckInterval}}"
+              class="bg-gray-700 p-2 rounded w-32 border border-gray-600 focus:border-blue-500 outline-none"
+              min="5"
+            />
+          </div>
+          <div>
+            <label class="block text-sm mb-2 text-gray-300"
+              >Timeout (seconds)</label
+            >
+            <input
+              type="number"
+              name="timeout"
+              value="{{.Settings.Timeout}}"
+              class="bg-gray-700 p-2 rounded w-32 border border-gray-600 focus:border-blue-500 outline-none"
+              min="1"
+            />
+          </div>
+          <button
+            type="submit"
+            class="bg-blue-600 px-6 py-2 rounded font-bold hover:bg-blue-500 transition"
+          >
+            Update Settings
+          </button>
+        </form>
+      </section>
+
+      <!-- Sites Table -->
+      <section
+        class="bg-gray-800 rounded-lg overflow-hidden border border-gray-700"
+      >
+        <div class="bg-gray-700 px-6 py-4 border-b border-gray-600">
+          <h3 class="text-xl font-semibold">
+            Monitored Sites ({{len .Sites}})
+          </h3>
         </div>
+        {{if .Sites}}
+        <table class="w-full text-left">
+          <thead class="bg-gray-750">
+            <tr class="border-b border-gray-700">
+              <th class="p-4 font-semibold">Name</th>
+              <th class="p-4 font-semibold">URL</th>
+              <th class="p-4 text-right font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .Sites}}
+            <tr class="border-t border-gray-700 hover:bg-gray-750 transition">
+              <td class="p-4 font-medium">{{.Name}}</td>
+              <td class="p-4 text-gray-400 truncate max-w-md">{{.URL}}</td>
+              <td class="p-4 text-right">
+                <div class="flex gap-2 justify-end">
+                  <!-- View Button -->
+                  <a
+                    href="{{.URL}}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center gap-1 px-3 py-2 rounded bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 hover:text-blue-300 transition font-medium text-sm"
+                  >
+                    <span>👁️</span> View
+                  </a>
 
-        <!-- Global Settings Section -->
-        <section class="mb-8 bg-gray-800 p-6 rounded-lg border border-gray-700">
-            <h3 class="text-xl font-semibold mb-4 text-blue-400">Global Settings</h3>
-            <form action="/manage/settings" method="POST" class="flex gap-4 items-end flex-wrap">
-                <div>
-                    <label class="block text-sm mb-2 text-gray-300">Check Interval (seconds)</label>
-                    <input type="number" name="interval" value="{{.Settings.CheckInterval}}" 
-                           class="bg-gray-700 p-2 rounded w-32 border border-gray-600 focus:border-blue-500 outline-none" min="5">
-                </div>
-                <div>
-                    <label class="block text-sm mb-2 text-gray-300">Timeout (seconds)</label>
-                    <input type="number" name="timeout" value="{{.Settings.Timeout}}" 
-                           class="bg-gray-700 p-2 rounded w-32 border border-gray-600 focus:border-blue-500 outline-none" min="1">
-                </div>
-                <button type="submit" class="bg-blue-600 px-6 py-2 rounded font-bold hover:bg-blue-500 transition">
-                    Update Settings
-                </button>
-            </form>
-        </section>
+                  <!-- Edit Button -->
+                  <button
+                    onclick="openEditModal('{{.Name}}', '{{.URL}}')"
+                    class="inline-flex items-center gap-1 px-3 py-2 rounded bg-amber-600/20 text-amber-400 hover:bg-amber-600/40 hover:text-amber-300 transition font-medium text-sm"
+                  >
+                    <span>✏️</span> Edit
+                  </button>
 
-        <!-- Sites Table -->
-        <section class="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
-            <div class="bg-gray-700 px-6 py-4 border-b border-gray-600">
-                <h3 class="text-xl font-semibold">Monitored Sites ({{len .Sites}})</h3>
-            </div>
-            {{if .Sites}}
-            <table class="w-full text-left">
-                <thead class="bg-gray-750">
-                    <tr class="border-b border-gray-700">
-                        <th class="p-4 font-semibold">Name</th>
-                        <th class="p-4 font-semibold">URL</th>
-                        <th class="p-4 text-right font-semibold">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{range .Sites}}
-                    <tr class="border-t border-gray-700 hover:bg-gray-750 transition">
-                        <td class="p-4 font-medium">{{.Name}}</td>
-                        <td class="p-4 text-gray-400 truncate max-w-md">{{.URL}}</td>
-                        <td class="p-4 text-right">
-                            <form action="/manage/delete" method="POST" style="display:inline;" 
-                                  onsubmit="return confirm('Are you sure you want to delete {{.Name}}?')">
-                                <input type="hidden" name="name" value="{{.Name}}">
-                                <button type="submit" class="text-red-400 hover:text-red-300 font-bold px-4 py-2 rounded hover:bg-red-900/20 transition">
-                                    Delete
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
-            {{else}}
-            <div class="p-12 text-center text-gray-400">
-                <p class="text-lg mb-4">No sites configured yet</p>
-                <button onclick="openModal()" class="text-blue-400 hover:text-blue-300 underline">
-                    Add your first site
-                </button>
-            </div>
+                  <!-- Delete Button -->
+                  <form
+                    action="/manage/delete"
+                    method="POST"
+                    style="display: inline"
+                    onsubmit="return confirm('Are you sure you want to delete {{.Name}}? This cannot be undone.')"
+                  >
+                    <input type="hidden" name="name" value="{{.Name}}" />
+                    <button
+                      type="submit"
+                      class="inline-flex items-center gap-1 px-3 py-2 rounded bg-red-600/20 text-red-400 hover:bg-red-600/40 hover:text-red-300 transition font-medium text-sm"
+                    >
+                      <span>🗑️</span> Delete
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
             {{end}}
-        </section>
+          </tbody>
+        </table>
+        {{else}}
+        <div class="p-12 text-center text-gray-400">
+          <p class="text-lg mb-4">No sites configured yet</p>
+          <button
+            onclick="openModal()"
+            class="text-blue-400 hover:text-blue-300 underline"
+          >
+            Add your first site
+          </button>
+        </div>
+        {{end}}
+      </section>
     </div>
 
     <!-- Modal for Adding Site -->
-    <div id="addSiteModal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4 border border-gray-700 shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-blue-400">Add New Site</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
-            </div>
-            
-            <form action="/settings/add" method="POST">
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-2 text-gray-300">Site Name</label>
-                    <input type="text" name="name" 
-                           class="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:border-blue-500 outline-none"
-                           placeholder="e.g., My Blog" required>
-                </div>
-                <div class="mb-6">
-                    <label class="block text-sm font-medium mb-2 text-gray-300">URL</label>
-                    <input type="url" name="url" 
-                           class="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:border-blue-500 outline-none"
-                           placeholder="https://example.com" required>
-                </div>
-                <div class="flex gap-3">
-                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-500 p-3 rounded font-bold transition">
-                        Add Site
-                    </button>
-                    <button type="button" onclick="closeModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 p-3 rounded font-bold transition">
-                        Cancel
-                    </button>
-                </div>
-            </form>
+    <div
+      id="addSiteModal"
+      class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50"
+    >
+      <div
+        class="bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4 border border-gray-700 shadow-2xl"
+      >
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-2xl font-bold text-blue-400">Add New Site</h3>
+          <button
+            onclick="closeModal()"
+            class="text-gray-400 hover:text-white text-2xl"
+          >
+            &times;
+          </button>
         </div>
+
+        <form action="/settings/add" method="POST">
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2 text-gray-300"
+              >Site Name</label
+            >
+            <input
+              type="text"
+              name="name"
+              class="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:border-blue-500 outline-none"
+              placeholder="e.g., My Blog"
+              required
+            />
+          </div>
+          <div class="mb-6">
+            <label class="block text-sm font-medium mb-2 text-gray-300"
+              >URL</label
+            >
+            <input
+              type="url"
+              name="url"
+              class="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:border-blue-500 outline-none"
+              placeholder="https://example.com"
+              required
+            />
+          </div>
+          <div class="flex gap-3">
+            <button
+              type="submit"
+              class="flex-1 bg-green-600 hover:bg-green-500 p-3 rounded font-bold transition"
+            >
+              Add Site
+            </button>
+            <button
+              type="button"
+              onclick="closeModal()"
+              class="flex-1 bg-gray-700 hover:bg-gray-600 p-3 rounded font-bold transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal for Editing Site -->
+    <div
+      id="editSiteModal"
+      class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50"
+    >
+      <div
+        class="bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4 border border-gray-700 shadow-2xl"
+      >
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-2xl font-bold text-amber-400">Edit Site</h3>
+          <button
+            onclick="closeEditModal()"
+            class="text-gray-400 hover:text-white text-2xl"
+          >
+            &times;
+          </button>
+        </div>
+
+        <form action="/manage/edit" method="POST">
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2 text-gray-300"
+              >Site Name</label
+            >
+            <input
+              type="text"
+              id="editName"
+              name="old_name"
+              class="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:border-amber-500 outline-none"
+              readonly
+              style="cursor: not-allowed; opacity: 0.7"
+            />
+            <small class="text-gray-500 block mt-1"
+              >Name cannot be changed</small
+            >
+          </div>
+          <div class="mb-6">
+            <label class="block text-sm font-medium mb-2 text-gray-300"
+              >URL</label
+            >
+            <input
+              type="url"
+              id="editUrl"
+              name="url"
+              class="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:border-amber-500 outline-none"
+              placeholder="https://example.com"
+              required
+            />
+          </div>
+          <div class="flex gap-3">
+            <button
+              type="submit"
+              class="flex-1 bg-amber-600 hover:bg-amber-500 p-3 rounded font-bold transition"
+            >
+              Update Site
+            </button>
+            <button
+              type="button"
+              onclick="closeEditModal()"
+              class="flex-1 bg-gray-700 hover:bg-gray-600 p-3 rounded font-bold transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <script>
-        function openModal() {
-            document.getElementById('addSiteModal').classList.remove('hidden');
-            document.getElementById('addSiteModal').classList.add('flex');
-        }
+      // Add Site Modal
+      function openModal() {
+        document.getElementById("addSiteModal").classList.remove("hidden");
+        document.getElementById("addSiteModal").classList.add("flex");
+      }
 
-        function closeModal() {
-            document.getElementById('addSiteModal').classList.add('hidden');
-            document.getElementById('addSiteModal').classList.remove('flex');
-        }
+      function closeModal() {
+        document.getElementById("addSiteModal").classList.add("hidden");
+        document.getElementById("addSiteModal").classList.remove("flex");
+      }
 
-        // Close modal when clicking outside
-        document.getElementById('addSiteModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
+      // Edit Site Modal
+      function openEditModal(name, url) {
+        document.getElementById("editName").value = name;
+        document.getElementById("editUrl").value = url;
+        document.getElementById("editSiteModal").classList.remove("hidden");
+        document.getElementById("editSiteModal").classList.add("flex");
+      }
+
+      function closeEditModal() {
+        document.getElementById("editSiteModal").classList.add("hidden");
+        document.getElementById("editSiteModal").classList.remove("flex");
+      }
+
+      // Close modals when clicking outside
+      document
+        .getElementById("addSiteModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) {
+            closeModal();
+          }
         });
 
-        // Close modal with Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeModal();
-            }
+      document
+        .getElementById("editSiteModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) {
+            closeEditModal();
+          }
         });
+
+      // Close modals with Escape key
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          closeModal();
+          closeEditModal();
+        }
+      });
     </script>
-</body>
+  </body>
 </html>

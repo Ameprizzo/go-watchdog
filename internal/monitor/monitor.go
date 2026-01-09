@@ -120,6 +120,20 @@ func (c *Config) DeleteSite(name string) error {
 	return c.save()
 }
 
+// UpdateSite updates a site's URL by name and saves
+func (c *Config) UpdateSite(name, newURL string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for i, s := range c.Sites {
+		if s.Name == name {
+			c.Sites[i].URL = newURL
+			break
+		}
+	}
+	return c.save()
+}
+
 // UpdateNotificationSettings updates notification configuration
 func (c *Config) UpdateNotificationSettings(notifConfig *types.NotificationConfig) error {
 	c.mu.Lock()

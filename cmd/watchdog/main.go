@@ -278,6 +278,42 @@ func main() {
 			}
 		})
 
+		// Edit site
+		http.HandleFunc("/manage/edit", func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodPost {
+				oldName := r.FormValue("old_name")
+				newURL := r.FormValue("url")
+
+				if newURL == "" {
+					http.Error(w, "URL cannot be empty", http.StatusBadRequest)
+					return
+				}
+
+				// Update the site in config
+				if err := cfg.UpdateSite(oldName, newURL); err != nil {
+					log.Printf("Error updating site: %v", err)
+					http.Error(w, "Failed to update site", http.StatusInternalServerError)
+					return
+				}
+
+				// Log the audit trail
+				if globalRepos != nil && globalRepos.AuditLog != nil {
+					auditLog := &database.AuditLog{
+						Action:     "site_updated",
+						EntityType: "site",
+						EntityID:   0,
+						OldValue:   "",
+						NewValue:   fmt.Sprintf("URL updated to %s", newURL),
+						UserID:     "system",
+						Timestamp:  time.Now(),
+					}
+					_ = globalRepos.AuditLog.Create(auditLog)
+				}
+
+				http.Redirect(w, r, "/manage", http.StatusSeeOther)
+			}
+		})
+
 		// Update global settings
 		http.HandleFunc("/manage/settings", func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodPost {
